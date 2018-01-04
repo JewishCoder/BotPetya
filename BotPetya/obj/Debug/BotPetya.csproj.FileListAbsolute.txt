@@ -1,0 +1,17 @@
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\BotPetya.exe.config
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\BotPetya.exe
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\BotPetya.pdb
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\HtmlAgilityPack.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\HtmlAgilityPack.pdb
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\JetBrains.Annotations.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\Microsoft.Threading.Tasks.Extensions.Desktop.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\Microsoft.Threading.Tasks.Extensions.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\Microsoft.Threading.Tasks.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\System.Net.Http.Extensions.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\System.Net.Http.Primitives.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\Newtonsoft.Json.dll
+D:\VSProjects\BotPetya\BotPetya\bin\Debug\VkNet.dll
+D:\VSProjects\BotPetya\BotPetya\obj\Debug\BotPetya.csproj.CoreCompileInputs.cache
+D:\VSProjects\BotPetya\BotPetya\obj\Debug\BotPetya.exe
+D:\VSProjects\BotPetya\BotPetya\obj\Debug\BotPetya.pdb
+D:\VSProjects\BotPetya\BotPetya\obj\Debug\BotPetya.csprojResolveAssemblyReference.cache
