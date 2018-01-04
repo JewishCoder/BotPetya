@@ -1,7 +1,7 @@
 {
   "version": 3,
   "targets": {
-    ".NETFramework,Version=v4.6.1": {
+    ".NETFramework,Version=v4.7": {
       "HtmlAgilityPack/1.6.6": {
         "type": "package",
         "compile": {
@@ -104,7 +104,7 @@
         }
       }
     },
-    ".NETFramework,Version=v4.6.1/win": {
+    ".NETFramework,Version=v4.7/win": {
       "HtmlAgilityPack/1.6.6": {
         "type": "package",
         "compile": {
@@ -207,7 +207,7 @@
         }
       }
     },
-    ".NETFramework,Version=v4.6.1/win-x64": {
+    ".NETFramework,Version=v4.7/win-x64": {
       "HtmlAgilityPack/1.6.6": {
         "type": "package",
         "compile": {
@@ -310,7 +310,7 @@
         }
       }
     },
-    ".NETFramework,Version=v4.6.1/win-x86": {
+    ".NETFramework,Version=v4.7/win-x86": {
       "HtmlAgilityPack/1.6.6": {
         "type": "package",
         "compile": {
@@ -741,7 +741,7 @@
     }
   },
   "projectFileDependencyGroups": {
-    ".NETFramework,Version=v4.6.1": [
+    ".NETFramework,Version=v4.7": [
       "VkNet >= 1.29.4"
     ]
   },
@@ -763,7 +763,7 @@
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
-        "net461"
+        "net47"
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
@@ -771,13 +771,13 @@
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "net461": {
+        "net47": {
           "projectReferences": {}
         }
       }
     },
     "frameworks": {
-      "net461": {
+      "net47": {
         "dependencies": {
           "VkNet": {
             "target": "Package",

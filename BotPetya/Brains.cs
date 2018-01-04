@@ -7,6 +7,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using VkNet;
+using VkNet.Enums;
 using VkNet.Enums.Filters;
 using VkNet.Model;
 using VkNet.Model.RequestParams;
@@ -17,6 +18,10 @@ namespace BotPetya
 	{
 		//6318801
 		//2823d6705766638647e5914013e17652e11bc82508df1084681bb6a7abfc66cfb243575f9faeec8b1ba77
+
+		private Random _random = new Random();
+		private BaseCommands _baseCommands = new BaseCommands();
+
 		public void Initialization(VkApi vk, ulong appId, string token)
 		{
 			vk.Authorize(new ApiAuthParams
@@ -61,16 +66,77 @@ namespace BotPetya
 					currentUserId = (long)item[1];
 					vk.Messages.MarkAsRead(messageId, currentUserId.ToString());
 					break;
+				case 12:
+					var dialogs = vk.Messages.GetDialogs(new MessagesDialogsGetParams
+					{
+						Unanswered=true,
+					});
+					var userId = (long)item[1];
+				 	var dialog = dialogs.Messages.FirstOrDefault(x => x.UserId == userId);
+					if(dialog != null)
+					{
+						dialog.ReadState = MessageReadState.Readed;
+					}
+					break;
 				case 4:
+					var commands = _baseCommands.LoadAllComands();
 					currentUserId = (long)item[3];
 					var currentMessage = (string)item[5];
-					if(currentMessage.ToLower().Equals("привет"))
+					var findCommand = commands.FirstOrDefault(x => x.Value.Equals(currentMessage));
+					if(findCommand != null)
 					{
-						answer = "ой ой мазафака, как житуха?";
+						answer = findCommand.Answers[_random.Next(0, findCommand.Answers.Count)].Value;
 					}
 					else
 					{
-						answer = string.Empty;
+						if(currentMessage.Count(x => x.Equals('~')) > 2)
+						{
+							var newCommand = currentMessage.Substring(1, currentMessage.Length - 2).Split('~');
+							if(newCommand.Length > 0)
+							{
+								var answers = newCommand[1].Split('|');
+								var anserList = new List<Answer>();
+								if(answers.Length > 0)
+								{
+									foreach(var newAnswer in answers)
+									{
+										if(string.IsNullOrWhiteSpace(newAnswer)) continue;
+										anserList.Add(new Answer
+										{
+											Value = newAnswer,
+										});
+									}
+								}
+
+								var commandExist = commands.FirstOrDefault(x => x.Value.Equals(newCommand[0]));
+								bool result;
+								if(commandExist != null)
+								{
+									foreach(var value in anserList)
+									{
+										commandExist.Answers.Add(value);
+									}
+
+									result = _baseCommands.AddComand(commandExist);
+								}
+								else
+								{
+									result = _baseCommands.AddComand(new Comand
+									{
+										Value = newCommand[0],
+										Answers = anserList.Count > 0 ? anserList : null,
+									});
+								}
+								if(result)
+								{
+									answer = "Команда добавлена";
+								}
+							}
+						}
+						else
+						{
+							answer = "error send";
+						}
 					}
 					break;
 			}
@@ -81,7 +147,7 @@ namespace BotPetya
 		public bool SendingResponse(VkApi vk, long userId, string answer)
 		{
 			long isSend = -1;
-			if(!string.IsNullOrWhiteSpace(answer))
+			if(!answer.Equals("error send"))
 			{
 				isSend = vk.Messages.Send(new MessagesSendParams
 				{

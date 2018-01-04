@@ -71,9 +71,10 @@ namespace BotPetya
 							var result = _brains.ProcessingEventMessages(_vk, code, update);
 							_currentUserId = result.Item1;
 							answer=result.Item2;
-							if(code == 4) break;
+							if(!string.IsNullOrWhiteSpace(answer)) break;
 						}
-						if(_currentUserId.HasValue)
+
+						if(_currentUserId.HasValue && !string.IsNullOrWhiteSpace(answer))
 						{
 							if(_brains.SendingResponse(_vk, _currentUserId.Value, answer))
 							{

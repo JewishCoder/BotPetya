@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Base>
+  <Command Value="Расскажи о себе">
+    <Answers>
+      <Answer Value="Я бот Петя, меня создал какой чувак, я не знаю за чем и почему, но я существую и ты можешь помочь мне стать умнее, чтоб я был полезный(захватил мир)" />
+      <Answer Value="Я вне настроение, отстань" />
+    </Answers>
+  </Command>
+  <Command Value="Ты любишь людей?">
+    <Answers>
+      <Answer Value="Кожаные ублюдки,чтоб вы сдохли" />
+      <Answer Value="Гыыыы" />
+    </Answers>
+  </Command>
+  <Command Value="Привет">
+    <Answers>
+      <Answer Value="ой ой мазафака" />
+      <Answer Value="Привет" />
+      <Answer Value="Дратути" />
+      <Answer Value="Вааааатсссааап" />
+      <Answer Value="хелоу блять" />
+    </Answers>
+  </Command>
+  <Command Value="Ну чо ты">
+    <Answers>
+      <Answer Value="ну лан лан, так уж и быть отвечу на пару сообщений" />
+    </Answers>
+  </Command>
+  <Command Value="Го в дотку?">
+    <Answers>
+      <Answer Value="Ой все ясно, я ливаю" />
+      <Answer Value="пока" />
+    </Answers>
+  </Command>
+  <Command Value="Жизнь дерьмо">
+    <Answers>
+      <Answer Value="Слышь нытик в мире дохера людей нуждающихся в мощи, а ты тут нюни развесил" />
+      <Answer Value="а ты что думал, хочешь жить хорошо, то нужно работать над этим" />
+      <Answer Value="Да лаадно?! ты только щас понял неудачник" />
+    </Answers>
+  </Command>
+  <Command Value=" привет ">
+    <Answers>
+      <Answer Value=" йоу " />
+    </Answers>
+  </Command>
+  <Command Value="привет">
+    <Answers>
+      <Answer Value="йоу" />
+    </Answers>
+  </Command>
+  <Command Value="кто я?">
+    <Answers>
+      <Answer Value="Ваномаскас" />
+    </Answers>
+  </Command>
+  <Command Value="Але как делы?">
+    <Answers>
+      <Answer Value="Нах пошел" />
+    </Answers>
+  </Command>
+</Base>
