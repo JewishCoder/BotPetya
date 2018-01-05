@@ -6,15 +6,22 @@ using System.Threading.Tasks;
 
 namespace BotPetya
 {
-	public class Comand
+	public class Command
 	{
+		private Random random = new Random();
+
 		public string Value { get; set; }
 
 		public List<Answer> Answers { get; set; }
 
-		public string RandomAnswer()
+		public Answer RandomAnswer()
 		{
-			return string.Empty;
+			Answer answer = null;
+			if(Answers?.Count > 0)
+			{
+				answer = Answers[random.Next(0, Answers.Count)];
+			}
+			return answer;
 		}
 	}
 }

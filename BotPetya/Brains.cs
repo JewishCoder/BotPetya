@@ -16,11 +16,23 @@ namespace BotPetya
 {
 	public class Brains
 	{
-		//6318801
-		//2823d6705766638647e5914013e17652e11bc82508df1084681bb6a7abfc66cfb243575f9faeec8b1ba77
+		#region Constants
 
-		private Random _random = new Random();
+		private const string BlankMessage = "BlankMessage";
+
+		private const string CommandAdded = "Слово силы изучено!";
+
+		private const string UnfoundCommand = "Словарный запас кончился!";
+
+		private const string ErrorAddingCommand = "Слово силы слишком тяжелое, обратись к создателю!!!!";
+
+		#endregion
+
+		#region Data
+
 		private BaseCommands _baseCommands = new BaseCommands();
+
+		#endregion
 
 		public void Initialization(VkApi vk, ulong appId, string token)
 		{
@@ -54,10 +66,10 @@ namespace BotPetya
 			});
 		}
 
-		public Tuple<long?, string> ProcessingEventMessages(VkApi vk, long code, List<object> item)
+		public Tuple<long?, Command> ProcessingEventMessages(VkApi vk, long code, List<object> item)
 		{
 			long? currentUserId = null;
-			var answer = string.Empty;
+			Command command = null;
 			switch(code)
 			{
 				case 7:
@@ -79,80 +91,55 @@ namespace BotPetya
 					}
 					break;
 				case 4:
-					var commands = _baseCommands.LoadAllComands();
 					currentUserId = (long)item[3];
 					var currentMessage = (string)item[5];
-					var findCommand = commands.FirstOrDefault(x => x.Value.Equals(currentMessage));
+
+					var findCommand = _baseCommands.LoadCommand(new Command { Value = currentMessage.ToLower() });
 					if(findCommand != null)
 					{
-						answer = findCommand.Answers[_random.Next(0, findCommand.Answers.Count)].Value;
+						command = findCommand;
 					}
 					else
 					{
 						if(currentMessage.Count(x => x.Equals('~')) > 2)
 						{
-							var newCommand = currentMessage.Substring(1, currentMessage.Length - 2).Split('~');
-							if(newCommand.Length > 0)
+							var newCommand = CreateCommand(currentMessage);
+							if(newCommand != null)
 							{
-								var answers = newCommand[1].Split('|');
-								var anserList = new List<Answer>();
-								if(answers.Length > 0)
+								command = new Command
 								{
-									foreach(var newAnswer in answers)
+									Value = CommandAdded,
+									Answers = new List<Answer>
 									{
-										if(string.IsNullOrWhiteSpace(newAnswer)) continue;
-										anserList.Add(new Answer
+										new Answer
 										{
-											Value = newAnswer,
-										});
+											Value = CommandAdded
+										}
 									}
-								}
-
-								var commandExist = commands.FirstOrDefault(x => x.Value.Equals(newCommand[0]));
-								bool result;
-								if(commandExist != null)
-								{
-									foreach(var value in anserList)
-									{
-										commandExist.Answers.Add(value);
-									}
-
-									result = _baseCommands.AddComand(commandExist);
-								}
-								else
-								{
-									result = _baseCommands.AddComand(new Comand
-									{
-										Value = newCommand[0],
-										Answers = anserList.Count > 0 ? anserList : null,
-									});
-								}
-								if(result)
-								{
-									answer = "Команда добавлена";
-								}
+								};
 							}
+							else command = new Command { Value = ErrorAddingCommand };
 						}
 						else
 						{
-							answer = "error send";
+							command = new Command { Value = BlankMessage };
 						}
 					}
 					break;
 			}
 
-			return Tuple.Create(currentUserId, answer);
+			return Tuple.Create(currentUserId, command);
 		}
 
-		public bool SendingResponse(VkApi vk, long userId, string answer)
+		public bool SendingResponse(VkApi vk, long userId, Command comand)
 		{
 			long isSend = -1;
-			if(!answer.Equals("error send"))
+			if(!comand.Value.Equals(BlankMessage))
 			{
 				isSend = vk.Messages.Send(new MessagesSendParams
 				{
 					UserId = userId,
-					Message = answer,
+					Message = comand.RandomAnswer().Value,
 				});
 			}
 			else
@@ -160,10 +147,58 @@ namespace BotPetya
 				isSend = vk.Messages.Send(new MessagesSendParams
 				{
 					UserId = userId,
-					Message = "Братка я тебя не понимаю, но ты можешь поднять мой IQ",
+					Message = UnfoundCommand,
 				});
 			}
 			return isSend == -1 ? false : true;
+		}
+
+		private Command CreateCommand(string message)
+		{
+			var commands = _baseCommands.LoadAllCommands();
+			var newCommand = message.Substring(1, message.Length - 2).Split('~');
+			if(newCommand.Length > 0)
+			{
+				var answers = newCommand[1].Split('|');
+				var anserList = new List<Answer>();
+				if(answers.Length > 0)
+				{
+					foreach(var newAnswer in answers)
+					{
+						if(string.IsNullOrWhiteSpace(newAnswer)) continue;
+						anserList.Add(new Answer
+						{
+							Value = newAnswer,
+						});
+					}
+				}
+
+				var commandExist = commands.FirstOrDefault(x => x.Value.Equals(newCommand[0]));
+				Command result;
+				if(commandExist != null)
+				{
+					foreach(var value in anserList)
+					{
+						commandExist.Answers.Add(value);
+					}
+
+					result = _baseCommands.AddComand(commandExist);
+				}
+				else
+				{
+					result = _baseCommands.AddComand(new Command
+					{
+						Value = newCommand[0].ToLower(),
+						Answers = anserList.Count > 0 ? anserList : null,
+					});
+				}
+				if(result != null)
+				{
+					return result;
+				}
+			}
+
+			return null;
 		}
 	}
 }

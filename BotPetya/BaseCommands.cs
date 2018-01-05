@@ -10,10 +10,12 @@ namespace BotPetya
 {
 	class BaseCommands
 	{
-		public bool AddComand(Comand comand)
+		private string _path = Path.Combine(Environment.CurrentDirectory, "baseComands.xml");
+
+		public Command AddComand(Command comand)
 		{
-			var fileName = Path.Combine(Environment.CurrentDirectory, "baseComands.xml");
-			var isAdded = true;
+			var fileName = GetPathDataFile();
+			Command isAdded = null;
 			try
 			{
 				var doc = new XmlDocument();
@@ -61,26 +63,67 @@ namespace BotPetya
 
 				doc.DocumentElement.AppendChild(node);
 				doc.Save(fileName);
+				isAdded = comand;
 			}
 			catch
 			{
-				isAdded = false;
+				isAdded = null;
 			}
 			
 			return isAdded;
 		}
 
-		public void LoadComand()
+		public Command LoadCommand(Command command)
 		{
-		}
-
-		public List<Comand> LoadAllComands()
-		{
-			var fileName = Path.Combine(Environment.CurrentDirectory, "baseComands.xml");
+			var fileName = GetPathDataFile();
 			var doc = new XmlDocument();
 			doc.Load(fileName);
 			var nodeList = doc.DocumentElement.ChildNodes;
-			var commands = new List<Comand>(nodeList.Count);
+			foreach(XmlNode commandNode in nodeList)
+			{
+				if(commandNode?.Attributes[0]?.Value != null)
+				{
+					if(commandNode.Attributes[0].Value.Equals(command.Value))
+					{
+						var answersNode = commandNode.FirstChild;
+						List<Answer> answers = null;
+						if(answersNode != null)
+						{
+							answers = new List<Answer>(answersNode.ChildNodes.Count);
+							foreach(XmlNode answer in answersNode.ChildNodes)
+							{
+								if(answer?.Attributes[0]?.Value != null)
+								{
+									var value = answer.Attributes[0].Value;
+									if(string.IsNullOrWhiteSpace(value)) continue;
+
+									answers.Add(new Answer
+									{
+										Value = value,
+									});
+								}
+							}
+						}
+						return (new Command
+						{
+							Value = commandNode.Attributes[0].Value,
+							Answers = answers.Count == 0 ? null : answers,
+						});
+					}
+				}
+				
+			}
+
+			return null;
+		}
+
+		public List<Command> LoadAllCommands()
+		{
+			var fileName = GetPathDataFile();
+			var doc = new XmlDocument();
+			doc.Load(fileName);
+			var nodeList = doc.DocumentElement.ChildNodes;
+			var commands = new List<Command>(nodeList.Count);
 			foreach(XmlNode command in nodeList)
 			{
 				var answersNode = command.FirstChild;
@@ -99,7 +142,7 @@ namespace BotPetya
 						});
 					}
 				}
-				commands.Add(new Comand
+				commands.Add(new Command
 				{
 					Value = command.Attributes[0].Value,
 					Answers = answers.Count == 0 ? null : answers,
@@ -107,6 +150,18 @@ namespace BotPetya
 			}
 
 			return commands;
+		}
+
+		private string GetPathDataFile()
+		{
+			if(!File.Exists(_path))
+			{
+				using(var writer = XmlWriter.Create(_path))
+				{
+					writer.WriteStartElement("Base");
+				}
+			}
+			return _path;
 		}
 	}
 }
