@@ -36,6 +36,9 @@ namespace BotPetya
 				case double v:
 					val = XmlConvert.ToString(v);
 					break;
+				case long v:
+					val = XmlConvert.ToString(v);
+					break;
 				case Enum v:
 					val = Enum.GetName(typeof(T), v);
 					break;
@@ -59,6 +62,7 @@ namespace BotPetya
 				case bool _: return (T)(object)XmlConvert.ToBoolean(valueAttr.Value.ToLower());
 				case int _: return (T)(object)XmlConvert.ToInt32(valueAttr.Value);
 				case double _: return (T)(object)XmlConvert.ToDouble(valueAttr.Value);
+				case long _: return (T)(object)long.Parse(valueAttr.Value);
 				case Enum _: return (T)Enum.Parse(typeof(T), valueAttr.Value);
 				default: return defValue;
 			}

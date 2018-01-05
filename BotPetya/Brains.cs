@@ -11,6 +11,9 @@ using VkNet.Enums;
 using VkNet.Enums.Filters;
 using VkNet.Model;
 using VkNet.Model.RequestParams;
+using VkNet.Model.Attachments;
+using VkNet.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace BotPetya
 {
@@ -26,11 +29,21 @@ namespace BotPetya
 
 		private const string ErrorAddingCommand = "Слово силы слишком тяжелое, обратись к создателю!!!!";
 
+		private const string StickerMessage = "Отправь стикер и я его запомню!";
+
+		private const string StickerCommandAdd = "стикер";
+
 		#endregion
 
 		#region Data
 
 		private BaseCommands _baseCommands = new BaseCommands();
+
+		private Random _random = new Random();
+
+		private Command _currentStickerCommand;
+
+		private bool _stickerCommandExist = false;
 
 		#endregion
 
@@ -93,7 +106,7 @@ namespace BotPetya
 				case 4:
 					currentUserId = (long)item[3];
 					var currentMessage = (string)item[5];
-
+					
 					var findCommand = _baseCommands.LoadCommand(new Command { Value = currentMessage.ToLower() });
 					if(findCommand != null)
 					{
@@ -101,22 +114,54 @@ namespace BotPetya
 					}
 					else
 					{
-						if(currentMessage.Count(x => x.Equals('~')) > 2)
+						if(currentMessage.Count(x => x.Equals('~')) > 2 || _currentStickerCommand != null)
 						{
-							var newCommand = CreateCommand(currentMessage);
+							List<MediaAttachment> media = null;
+							if(_currentStickerCommand != null)
+							{
+								var json = (JObject)item[6];
+								var list = new List<VkResponse>(json.Count);
+								foreach(var v in json)
+								{
+									list.Add(new VkResponse(v.Value));
+								}
+
+								media = new List<MediaAttachment>();
+								if(list.Exists(x => x.ToString().Equals("sticker")))
+								{
+									media.Add(new Sticker { ProductId = list[0], Id = list[2] });
+								}
+								if(list.Exists(x => x.ToString().Equals("audio")))
+								{
+									//media.Add(new Audio { Id = list[1] });
+								}
+							}
+							var newCommand = CreateCommand(currentMessage, media);
 							if(newCommand != null)
 							{
-								command = new Command
+								if(_currentStickerCommand != null && media != null)
 								{
-									Value = CommandAdded,
-									Answers = new List<Answer>
+									_currentStickerCommand = null;
+									_stickerCommandExist = false;
+								}
+								if(_currentStickerCommand == null)
+								{
+									command = new Command
 									{
-										new Answer
+										Value = CommandAdded,
+										Answers = new List<Answer>
 										{
-											Value = CommandAdded
+											new Answer
+											{
+												Value = CommandAdded
+											}
 										}
-									}
-								};
+									};
+								}
+								else
+								{
+									command = newCommand;
+								}
 							}
 							else command = new Command { Value = ErrorAddingCommand };
 						}
@@ -136,10 +181,40 @@ namespace BotPetya
 			long isSend = -1;
 			if(!comand.Value.Equals(BlankMessage))
 			{
+				Sticker stickerId = null;
+				if(comand.Attachments != null && comand.Answers == null)
+				{
+					stickerId = (Sticker)comand.RandomAttachment(AttachmentTypes.Sticker);
+				}
+				
+				if(comand.Attachments != null && comand.Answers != null)
+				{
+					var number = _random.Next(0, comand.Answers.Count+1);
+					if(number == comand.Answers.Count)
+					stickerId = (Sticker)comand.RandomAttachment(AttachmentTypes.Sticker);
+				}
+				var answer = comand.RandomAnswer();
+				var message = BlankMessage;
+				if(answer?.Value == null)
+				{
+					if(stickerId != null) message = AttachmentTypes.Sticker.ToString();
+
+				}
+				else
+				{
+					if(_stickerCommandExist)
+					{
+						stickerId = null;
+						message = StickerMessage;
+					}
+					else
+						message = answer.Value;
+				}
 				isSend = vk.Messages.Send(new MessagesSendParams
 				{
 					UserId = userId,
-					Message = comand.RandomAnswer().Value,
+					Message = message,
+					StickerId = stickerId == null ? null : (uint?)stickerId.Id.Value,
 				});
 			}
 			else
@@ -153,33 +228,96 @@ namespace BotPetya
 			return isSend == -1 ? false : true;
 		}
 
-		private Command CreateCommand(string message)
+		private Command CreateCommand(string message, List<MediaAttachment> media = null)
 		{
 			var commands = _baseCommands.LoadAllCommands();
-			var newCommand = message.Substring(1, message.Length - 2).Split('~');
+			var newCommand = !string.IsNullOrWhiteSpace(message) ? message.Substring(1, message.Length - 2).Split('~') : null;
+
+			if(_currentStickerCommand != null && media != null)
+			{
+				if(!_stickerCommandExist)
+				{
+					_currentStickerCommand.Attachments = media;
+					_currentStickerCommand.Answers = null;
+				}
+				else
+				{
+					if(_currentStickerCommand.Attachments != null)
+					{
+						foreach(var item in media)
+						{
+							_currentStickerCommand.Attachments.Add(item);
+						}
+					}
+					else
+					{
+						_currentStickerCommand.Attachments = media;
+					}
+				}
+				return _baseCommands.AddComand(_currentStickerCommand);
+			}
+
 			if(newCommand.Length > 0)
 			{
+				Command commandExist;
+				if(newCommand[0].ToLower().Equals(StickerCommandAdd))
+				{
+					commandExist = commands.FirstOrDefault(x => x.Value.Equals(newCommand[1].ToLower()));
+					if(commandExist == null)
+					{
+						_currentStickerCommand = new Command
+						{
+							Value = newCommand[1].ToLower(),
+							Answers = new List<Answer>
+						{
+							new Answer
+							{
+								Value = StickerMessage
+							}
+						}
+						};
+					}
+					else
+					{
+						_stickerCommandExist = true;
+						_currentStickerCommand = commandExist;
+					}
+
+					return _currentStickerCommand;
+				}
+				
 				var answers = newCommand[1].Split('|');
-				var anserList = new List<Answer>();
+				var answerList = new List<Answer>();
 				if(answers.Length > 0)
 				{
 					foreach(var newAnswer in answers)
 					{
 						if(string.IsNullOrWhiteSpace(newAnswer)) continue;
-						anserList.Add(new Answer
+						answerList.Add(new Answer
 						{
 							Value = newAnswer,
 						});
 					}
 				}
 
-				var commandExist = commands.FirstOrDefault(x => x.Value.Equals(newCommand[0]));
+				commandExist = commands.FirstOrDefault(x => x.Value.Equals(newCommand[0].ToLower()));
 				Command result;
 				if(commandExist != null)
 				{
-					foreach(var value in anserList)
+					if(answerList.Count > 0)
 					{
-						commandExist.Answers.Add(value);
+						if(commandExist.Answers != null)
+						{
+							foreach(var value in answerList)
+							{
+								commandExist.Answers.Add(value);
+
+							}
+						}
+						else
+						{
+							commandExist.Answers = answerList;
+						}
 					}
 
 					result = _baseCommands.AddComand(commandExist);
@@ -189,7 +327,7 @@ namespace BotPetya
 					result = _baseCommands.AddComand(new Command
 					{
 						Value = newCommand[0].ToLower(),
-						Answers = anserList.Count > 0 ? anserList : null,
+						Answers = answerList.Count > 0 ? answerList : null,
 					});
 				}
 				if(result != null)

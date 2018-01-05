@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Answer.cs" />
+    <Compile Include="AttachmentTypes.cs" />
     <Compile Include="BaseCommands.cs" />
     <Compile Include="Brains.cs" />
     <Compile Include="Command.cs" />
