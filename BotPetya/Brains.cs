@@ -333,8 +333,8 @@ namespace BotPetya
 					result = _baseCommands.AddComand(new Command
 					{
 						Value = newCommand[0].ToLower(),
-						Answers = answerList.Count > 0 ? answerList : null,
-						Attachments = media.Select(x => x.Value).FirstOrDefault(),
+						Answers = answerList?.Count > 0 ? answerList : null,
+						Attachments = media?.Select(x => x.Value)?.FirstOrDefault(),
 					});
 				}
 				if(result != null)

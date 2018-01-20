@@ -27,6 +27,8 @@ namespace BotPetya
 
 		static long? _currentUserId = null;
 
+		static Exception _exc = null;
+
 		#endregion
 
 		static void RevivalPetya()
@@ -34,6 +36,24 @@ namespace BotPetya
 			_brains.Initialization(_vk, 6318801, "2823d6705766638647e5914013e17652e11bc82508df1084681bb6a7abfc66cfb243575f9faeec8b1ba77");
 			if(_vk.IsAuthorized)
 			{
+				if(_exc != null)
+				{
+					var command = new Command
+					{
+						Value = "Error",
+						Answers = new List<Answer>
+						{
+							new Answer
+							{
+									Value=$"Message:\n{_exc.Message}\nInnerException:\n{_exc.InnerException}",
+							},	
+						},
+					};
+					_brains.SendingResponse(_vk, 115078118, command);
+
+					_exc = null;
+				}
+
 				Console.ForegroundColor = ConsoleColor.Cyan;
 				Console.WriteLine("Авторизация прошла успешно");
 				Console.ResetColor();
@@ -107,6 +127,7 @@ namespace BotPetya
 			{
 				Console.WriteLine("auth fail");
 				Console.WriteLine(exc.Message, exc);
+				_exc = exc;
 			}
 			finally
 			{
