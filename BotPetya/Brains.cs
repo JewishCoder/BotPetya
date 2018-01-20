@@ -116,26 +116,7 @@ namespace BotPetya
 					{
 						if(currentMessage.Count(x => x.Equals('~')) > 2 || _currentStickerCommand != null)
 						{
-							List<MediaAttachment> media = null;
-							if(_currentStickerCommand != null)
-							{
-								var json = (JObject)item[6];
-								var list = new List<VkResponse>(json.Count);
-								foreach(var v in json)
-								{
-									list.Add(new VkResponse(v.Value));
-								}
-
-								media = new List<MediaAttachment>();
-								if(list.Exists(x => x.ToString().Equals("sticker")))
-								{
-									media.Add(new Sticker { ProductId = list[0], Id = list[2] });
-								}
-								if(list.Exists(x => x.ToString().Equals("audio")))
-								{
-									//media.Add(new Audio { Id = list[1] });
-								}
-							}
+							var media = ParsingAttachmets(item[6]);
 							var newCommand = CreateCommand(currentMessage, media);
 							if(newCommand != null)
 							{
@@ -210,11 +191,18 @@ namespace BotPetya
 					else
 						message = answer.Value;
 				}
+				List<MediaAttachment> attachments = null;
+				if(comand?.Attachments != null && !comand.Attachments.Select(x => x is Sticker).All(x => x))
+				{
+					attachments = comand.Attachments;
+				}
+
 				isSend = vk.Messages.Send(new MessagesSendParams
 				{
 					UserId = userId,
 					Message = message,
 					StickerId = stickerId == null ? null : (uint?)stickerId.Id.Value,
+					Attachments = !_stickerCommandExist ? attachments : null,
 				});
 			}
 			else
@@ -228,30 +216,30 @@ namespace BotPetya
 			return isSend == -1 ? false : true;
 		}
 
-		private Command CreateCommand(string message, List<MediaAttachment> media = null)
+		private Command CreateCommand(string message, Dictionary<AttachmentTypes, List<MediaAttachment>> media = null)
 		{
 			var commands = _baseCommands.LoadAllCommands();
 			var newCommand = !string.IsNullOrWhiteSpace(message) ? message.Substring(1, message.Length - 2).Split('~') : null;
 
-			if(_currentStickerCommand != null && media != null)
+			if(_currentStickerCommand != null && (media != null && media.TryGetValue(AttachmentTypes.Sticker, out var stiker)))
 			{
 				if(!_stickerCommandExist)
 				{
-					_currentStickerCommand.Attachments = media;
+					_currentStickerCommand.Attachments = stiker;
 					_currentStickerCommand.Answers = null;
 				}
 				else
 				{
 					if(_currentStickerCommand.Attachments != null)
 					{
-						foreach(var item in media)
+						foreach(var item in stiker)
 						{
 							_currentStickerCommand.Attachments.Add(item);
 						}
 					}
 					else
 					{
-						_currentStickerCommand.Attachments = media;
+						_currentStickerCommand.Attachments = stiker;
 					}
 				}
 				return _baseCommands.AddComand(_currentStickerCommand);
@@ -320,6 +308,24 @@ namespace BotPetya
 						}
 					}
 
+					if(media != null && media.Count > 0)
+					{
+						if(commandExist.Attachments != null)
+						{
+							foreach(var item in media)
+							{
+								foreach(var value in item.Value)
+								{
+									commandExist.Attachments.Add(value);
+								}
+							}
+						}
+						else
+						{
+							commandExist.Attachments = media.Select(x => x.Value).FirstOrDefault();
+						}
+					}
+
 					result = _baseCommands.AddComand(commandExist);
 				}
 				else
@@ -328,6 +334,7 @@ namespace BotPetya
 					{
 						Value = newCommand[0].ToLower(),
 						Answers = answerList.Count > 0 ? answerList : null,
+						Attachments = media.Select(x => x.Value).FirstOrDefault(),
 					});
 				}
 				if(result != null)
@@ -338,5 +345,44 @@ namespace BotPetya
 
 			return null;
 		}
+
+		private Dictionary<AttachmentTypes, List<MediaAttachment>> ParsingAttachmets(object jsonAttachment)
+		{
+			var json = (JObject)jsonAttachment;
+			var list = new List<VkResponse>(json.Count);
+			foreach(var v in json)
+			{
+				list.Add(new VkResponse(v.Value));
+			}
+
+			var media = new List<MediaAttachment>();
+			if(list.Exists(x => x.ToString().Equals("audio")))
+			{
+				foreach(var audio in list)
+				{
+					var parse = audio.ToString().Trim('{', '}').Split('_');
+					if(parse.Length > 1)
+					{
+						media.Add(new Audio { OwnerId = long.Parse(parse[0]), Id = long.Parse(parse[1]) });
+					}
+				}
+
+				return new Dictionary<AttachmentTypes, List<MediaAttachment>>
+				{
+					{ AttachmentTypes.Audio, media },
+				};
+			}
+			else if(list.Exists(x => x.ToString().Equals("sticker")))
+			{
+				media.Add(new Sticker { ProductId = list[0], Id = list[2] });
+
+				return new Dictionary<AttachmentTypes, List<MediaAttachment>>
+				{
+					{ AttachmentTypes.Sticker, media},
+				};
+			}
+
+			return null;
+		} 
 	}
 }

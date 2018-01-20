@@ -35,7 +35,7 @@ namespace BotPetya
 				if(types == AttachmentTypes.Sticker)
 				{
 					var stickers = Attachments.Where(x => x is Sticker).ToList();
-					attachment = stickers[random.Next(0, stickers.Count)];
+					if(stickers.Count > 0) attachment = stickers[random.Next(0, stickers.Count)];
 				}
 			}
 

@@ -25,6 +25,7 @@ namespace BotPetya
 				XmlNode node = null;
 				XmlNode answerNode = null;
 				XmlNode attachmentsNode = null;
+				XmlNode audioNode = doc.CreateElement("Audio");
 				XmlAttribute attr = null;
 
 				var findCommand = doc.DocumentElement.ChildNodes.Cast<XmlNode>().FirstOrDefault(x => x.Attributes[0].Value == comand.Value);
@@ -71,6 +72,11 @@ namespace BotPetya
 					if(findAttachments != null)
 					{
 						attachmentsNode = findCommand["Attachments"];
+						var audio = attachmentsNode
+									.ChildNodes
+									.OfType<XmlNode>()
+									.FirstOrDefault(x => x.HasChildNodes && x.Name == AttachmentTypes.Audio.ToString());
+						audioNode = audio ?? audioNode;
 					}
 					else
 					{
@@ -95,6 +101,20 @@ namespace BotPetya
 								stickerNode.WriteParameter("ProductId", sticker.ProductId.Value);
 								attachmentsNode.AppendChild(stickerNode);
 							}
+							else if(attachment is Audio track)
+							{
+								var findAttachment = audioNode 
+									.ChildNodes
+									.OfType<XmlNode>()
+									.FirstOrDefault(n => n.HasChildNodes && n.ReadParameter("Id", default(long)) == track.Id);
+
+								if(findAttachment != null) continue;
+
+								var trackNode = doc.CreateElement("Track");
+								trackNode.WriteParameter("Id", track.Id);
+								trackNode.WriteParameter("OwnerId", track.OwnerId);
+								audioNode.AppendChild(trackNode);
+							}
 						}
 						else
 						{
@@ -105,9 +125,17 @@ namespace BotPetya
 								stickerNode.WriteParameter("ProductId", sticker.ProductId.Value);
 								attachmentsNode.AppendChild(stickerNode);
 							}
+							else if(attachment is Audio track)
+							{
+								var trackNode = doc.CreateElement("Track");
+								trackNode.WriteParameter("Id", track.Id);
+								trackNode.WriteParameter("OwnerId", track.OwnerId);
+								audioNode.AppendChild(trackNode);
+							}
 						}
 					}
 
+					if(audioNode.HasChildNodes) attachmentsNode.AppendChild(audioNode);
 					node.AppendChild(attachmentsNode);
 				}
 
@@ -177,6 +205,22 @@ namespace BotPetya
 											});
 										}
 									}
+									else if(attachment.Name.Equals(AttachmentTypes.Audio.ToString()))
+									{
+										foreach(XmlNode track in attachment.ChildNodes)
+										{
+											var id = track.ReadParameter("Id", default(long));
+											var ownerId = track.ReadParameter("OwnerId", default(long));
+											if(id != default && ownerId != default)
+											{
+												attachments.Add(new Audio
+												{
+													Id = id,
+													OwnerId = ownerId,
+												});
+											}
+										}
+									}
 								}
 							}
 						}
@@ -240,6 +284,22 @@ namespace BotPetya
 										Id = id,
 										ProductId = productId
 									});
+								}
+							}
+							else if(attachment.Name.Equals(AttachmentTypes.Audio.ToString()))
+							{
+								foreach(XmlNode track in attachment.ChildNodes)
+								{
+									var id = track.ReadParameter("Id", default(long));
+									var ownerId = track.ReadParameter("OwnerId", default(long));
+									if(id != default && ownerId != default)
+									{
+										attachments.Add(new Audio
+										{
+											Id = id,
+											OwnerId = ownerId,
+										});
+									}
 								}
 							}
 						}
